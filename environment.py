@@ -1,3 +1,6 @@
+from turtle import color
+from argon2 import verify_password
+#from matplotlib.lines import _LineStyle
 import numpy as np 
 import matplotlib.pyplot as plt
 import random
@@ -251,7 +254,7 @@ print("human_presence_matrix", human_presence_matrix)
 sum_human_matrix = 0 
 for i in range(len(human_presence_matrix[0])):
     for j in range (len(human_presence_matrix[1])):
-        human_presence_matrix[i,j]= random.randint(0,1000)
+        human_presence_matrix[i,j]= random.randint(0,40)
         sum_human_matrix = sum_human_matrix + human_presence_matrix[i,j]
 
 
@@ -261,7 +264,7 @@ print("sum_human_matrix", sum_human_matrix)
 sum_robot_matrix = 0
 for i in range (len(robot_presence_matrix[0])):
     for j in range (len(robot_presence_matrix[1])):
-        robot_presence_matrix[i,j]=random.randint(0,1000)
+        robot_presence_matrix[i,j]=random.randint(0,40)
         sum_robot_matrix = sum_robot_matrix + robot_presence_matrix[i,j]
 
 print("robot_presence_matrix", robot_presence_matrix)
@@ -578,6 +581,80 @@ for i in range (len(risk_y_axis)):
     risk_y_axis[i] = risk_prob_time[i]
 plot_risk = plt.figure()
 plt.plot(risk_x_axis, risk_y_axis, color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
+plt.xlabel('Time instants')
+plt.ylabel('Probability of collision')
+plt.title('Probability of Collision Vs Time')
+
+plt.show()
+
+
+
+### Verification of ALgorithm 
+### Using Monte Carlo Methods 
+
+print(" \t\t\t ###Verification!### ")
+
+verification_para = 100
+ver_human_src_loc = H1.get_init_loc()
+ver_human_dst_loc = H1.get_dst_loc()
+
+ver_time_taken = time_taken
+ver_robot_path = R1.get_path_robot()
+ver_human_path_test = H1.get_path_human()
+
+ver_human_src_loc=(round(ver_human_src_loc[0]), round(ver_human_src_loc[1]))
+random_walk_human = [0] * verification_para
+
+
+
+for i in range (verification_para):
+    ver_transisition_vector = human_path_prediction(ver_human_src_loc,ver_time_taken)
+    ver_human_path = new_path(ver_human_src_loc, ver_transisition_vector)
+    random_walk_human[i] = ver_human_path 
+
+print(ver_human_path_test)
+print(ver_human_path)
+
+for i in range (len(random_walk_human)):
+    print("i=", i, random_walk_human[i])
+print("end!")
+
+### verification monte carlo 
+
+ver_probability_vector = [0] * time_length
+
+for i in range (verification_para):
+    for j in range(time_length):
+        if (manhatten_distance(random_walk_human[i][j], ver_robot_path[j]) < threshold_distance):
+            ver_probability_vector[j] += (1/1600) * (1 / 1600)
+
+
+for i in range (len(ver_probability_vector)):
+    ver_probability_vector[i] = ver_probability_vector[i] / verification_para
+print("ver_prob",ver_probability_vector) 
+print("risk_prob",risk_prob_time)
+
+for i in range (len(ver_probability_vector)):
+    print("i=", i ,risk_prob_time[i], ver_probability_vector[i])
+
+
+
+
+risk_x_axis = [0] * time_length
+
+for i in range(len(risk_x_axis)):
+    risk_x_axis[i] = i
+
+risk_y_axis = [0] * time_length 
+ver_y_axis = [0] * time_length
+
+for i in range (len(risk_y_axis)):
+    risk_y_axis[i] = risk_prob_time[i]
+    ver_y_axis[i] = ver_probability_vector[i]
+
+plot_risk = plt.figure()
+plt.plot(risk_x_axis, risk_y_axis, color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
+plt.plot(risk_x_axis, ver_y_axis, color= "red" )
 plt.xlabel('Time instants')
 plt.ylabel('Probability of collision')
 plt.title('Probability of Collision Vs Time')
