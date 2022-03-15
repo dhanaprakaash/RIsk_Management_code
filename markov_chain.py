@@ -62,8 +62,8 @@ print("Resultant", resultant_2 , "sum:", np.sum(resultant_2))
 # Generating the Path:
 
 
-h1_start_location = a_random_position(20,20)
-h1_dest_locatiion = a_random_position(20,20)
+h1_start_location = a_random_position(40,40)
+h1_dest_locatiion = a_random_position(40,40)
 
 print("h1_start","h1_destin", h1_start_location, h1_dest_locatiion)
 

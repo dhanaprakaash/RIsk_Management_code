@@ -23,6 +23,7 @@ class Robot():
     
     def get_dest_loc(self):
         return self.destination_loc
+    
     def set_planned_path(self, path):
         self.planned_path = path
     

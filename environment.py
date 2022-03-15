@@ -10,6 +10,7 @@ from human import Human
 from robot_path_plan import robot_path_planning
 from distance_funs import manhatten_distance
 from new_path import new_path
+from minimin import minimum
 
 
 # initial Environment 
@@ -89,6 +90,8 @@ r1_dst = R1.get_dest_loc()
 r1_path = robot_path_planning(r1_src, r1_dst)
 R1.set_planned_path(r1_path)
 check = R1.get_path_robot()
+
+print("Check: ",check)
 
 
 H1.set_init_loc(a_random_position(dimension,dimension))
@@ -211,7 +214,372 @@ print("Robot:", r1_path)
 print("Human: ", human_path)
 
 
+print ("\n\n\n")
+print("\t\t\t\t\t\t****  Details ****")
+
+
 H1.print_details()
 R1.print_details()
-
+print()
 ### *** End of the ENvironemental Details *** 
+
+### The Risk assessment 
+
+print ("#### Risk Assessment! ####")
+human_path_test = H1.get_path_human()
+length_human = len(human_path_test)
+
+print("\n\n\n\thuman_path_test",human_path_test, "length= ", length_human)
+
+robot_path_test = R1.get_path_robot()
+length_robot = len(robot_path_test)
+
+print ("\n\n\n\tRobot_test", robot_path_test, "length = ", length_robot)
+
+
+# Matrix for finding the probability 
+
+# For Humans 
+
+human_presence_matrix = np.zeros((dimension,dimension))
+robot_presence_matrix = np.zeros((dimension,dimension))
+
+
+print("human_presence_matrix", human_presence_matrix)
+
+
+sum_human_matrix = 0 
+for i in range(len(human_presence_matrix[0])):
+    for j in range (len(human_presence_matrix[1])):
+        human_presence_matrix[i,j]= random.randint(0,1000)
+        sum_human_matrix = sum_human_matrix + human_presence_matrix[i,j]
+
+
+print("human_presence_matrix", human_presence_matrix)
+print("sum_human_matrix", sum_human_matrix)
+
+sum_robot_matrix = 0
+for i in range (len(robot_presence_matrix[0])):
+    for j in range (len(robot_presence_matrix[1])):
+        robot_presence_matrix[i,j]=random.randint(0,1000)
+        sum_robot_matrix = sum_robot_matrix + robot_presence_matrix[i,j]
+
+print("robot_presence_matrix", robot_presence_matrix)
+print("sum_robot_matrix", sum_robot_matrix)
+
+
+# Probability Matrix
+# for HUmans 
+
+for i in range (len(human_presence_matrix[0])):
+    for j in range (len(human_presence_matrix[1])):
+        human_presence_matrix[i,j] = human_presence_matrix[i,j]/ sum_human_matrix
+
+for i in range (len(robot_presence_matrix[0])):
+    for j in range (len(robot_presence_matrix[1])):
+        robot_presence_matrix[i,j] = robot_presence_matrix[i,j]/ sum_robot_matrix 
+
+
+# printing the final matrix 
+
+print ("human probability matrix: ", human_presence_matrix)
+print ("robot probability matrix: ", robot_presence_matrix)
+
+## testing the test_sum
+
+test_sum = 0 
+
+for i in range (len(human_presence_matrix[0])):
+    for j in range (len(human_presence_matrix[1])):
+        test_sum = test_sum + human_presence_matrix[i,j]
+
+print("Human test", test_sum)
+
+# For Robot
+
+time_length = minimum( len(human_path_test), len(robot_path_test))
+distance_vector = [0] * time_length
+risk_vector = [0] * time_length
+
+for i in range(time_length):
+    distance_vector[i] = manhatten_distance(human_path_test[i],robot_path_test[i])
+
+print("distance vector",distance_vector)
+
+threshold_distance = 30
+for i in range (time_length):
+    if (distance_vector[i] < threshold_distance):
+        risk_vector[i]=1
+    else:
+        risk_vector[i]=0
+
+print("risk_vector",risk_vector)
+
+# Risk Matrix 
+
+risk_matrix = np.zeros((time_length,40,40))
+probability_risk = [0] * time_length
+print("Time Length", time_length)
+print("shape of risk matrix",np.shape(risk_matrix) )
+print("***Probability_risk***", probability_risk)
+
+### ALGORITHM FOR RISK CALCULATION 
+
+
+count_c1 = 0
+count_c2 = 0
+count_c3 = 0
+count_c4 = 0
+count_c5 = 0
+count_c6 = 0
+count_c7 = 0
+count_c8 = 0
+count_c9 = 0
+
+
+for k in range(time_length):
+    if(risk_vector[k]==1):
+        for i in range(40):
+            for j in range(40):
+                if (i==0 and j==0):
+                    count_c1 = count_c1 +1 
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i+1,j]=human_presence_matrix[i+1, j] * robot_presence_matrix[i+1, j]
+                    risk_matrix[k,i,j+1]=human_presence_matrix[i, j+1] * robot_presence_matrix[i, j+1]
+                    risk_matrix[k,i+1, j+1]=human_presence_matrix[i+1, j+1] * robot_presence_matrix[i+1, j+1]
+                    print("case 1",risk_matrix[k,i,j], risk_matrix[k,i+1,j], risk_matrix[k,i,j+1], risk_matrix[k,i+1,j+1],"==",risk_matrix[k,i,j]+ risk_matrix[k,i+1,j]+ risk_matrix[k,i,j+1]+risk_matrix[k,i+1, j+1] )
+                    probability_risk[k] = risk_matrix[k,i,j]+risk_matrix[k,i+1,j]+risk_matrix[k,i,j+1]+risk_matrix[k,i+1, j+1]
+
+                elif (i==39 and j == 0):
+                    count_c2 = count_c2 +1
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i-1,j]=human_presence_matrix[i-1, j] * robot_presence_matrix[i-1, j]
+                    risk_matrix[k,i-1,j+1]=human_presence_matrix[i-1,j+1] * robot_presence_matrix[i-1, j+1]
+                    risk_matrix[k,i,j+1]=human_presence_matrix[i, j+1] * robot_presence_matrix[i, j+1]
+                    print("case 2 ", risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i-1, j+1] +risk_matrix[k, i, j+1])
+                    probability_risk[k] = risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i-1, j+1] +risk_matrix[k, i, j+1]
+                elif (i==0 and j ==39):
+                    count_c3 = count_c3 +1
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i,j-1]=human_presence_matrix[i, j-1] * robot_presence_matrix[i, j-1]
+                    risk_matrix[k,i+1,j]=human_presence_matrix[i+1, j] * robot_presence_matrix[i+1, j]
+                    risk_matrix[k,i+1, j]=human_presence_matrix[i+1, j] * robot_presence_matrix[i+1, j]
+                    print("Case 3:",risk_matrix[k, i, j]+ risk_matrix[k, i, j-1]+risk_matrix[k, i+1, j] + risk_matrix[k, i+1, j] )
+                    probability_risk[k] = risk_matrix[k, i, j]+ risk_matrix[k, i, j-1]+risk_matrix[k, i+1, j] + risk_matrix[k, i+1, j]
+                    
+                elif(i==39 and j ==39):
+                    count_c4 = count_c4 +1
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i-1,j]=human_presence_matrix[i-1, j] * robot_presence_matrix[i-1, j]
+                    risk_matrix[k,i,j-1]=human_presence_matrix[i, j-1] * robot_presence_matrix[i, j-1]
+                    risk_matrix[k,i-1,j-1]=human_presence_matrix[i-1,j-1] * robot_presence_matrix[i-1,j-1]
+                    print("case 4 ",risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i, j-1] + risk_matrix[k, i-1, j-1] )
+                    probability_risk[k] = risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i, j-1] + risk_matrix[k, i-1, j-1]
+
+                elif (j==0 and (i !=0 and i !=39)):# correct
+                    count_c5 = count_c5 +1 
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i-1,j]=human_presence_matrix[i-1, j] * robot_presence_matrix[i-1, j]
+                    risk_matrix[k,i+1,j]=human_presence_matrix[i+1, j] * robot_presence_matrix[i+1, j]
+                    risk_matrix[k,i-1,j+1] = human_presence_matrix[i-1,j+1] * robot_presence_matrix[i-1, j+1]
+                    risk_matrix[k,i,j+1]=human_presence_matrix[i, j+1] * robot_presence_matrix[i, j+1]
+                    risk_matrix[k,i+1, j+1]=human_presence_matrix[i+1, j+1] * robot_presence_matrix[i+1, j+1]
+                    print("case 5", risk_matrix[k, i, j] + risk_matrix[k, i-1, j] + risk_matrix[k, i+1, j] + risk_matrix[k,i-1, j+1] +risk_matrix[k, i,j+1] +risk_matrix[k, i+1,j+1])
+                    probability_risk[k] = risk_matrix[k, i, j] + risk_matrix[k, i-1, j] + risk_matrix[k, i+1, j] + risk_matrix[k,i-1, j+1] +risk_matrix[k, i,j+1] +risk_matrix[k, i+1,j+1]
+                    
+                elif (j==39 and (i !=0 and i !=39)): # correct
+                    count_c6 = count_c6 +1 
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i-1,j]=human_presence_matrix[i-1, j] * robot_presence_matrix[i-1, j]
+                    risk_matrix[k,i+1,j]=human_presence_matrix[i+1, j] * robot_presence_matrix[i+1, j]
+                    risk_matrix[k,i-1,j-1]=human_presence_matrix[i-1][j-1] * robot_presence_matrix[i-1][j-1]
+                    risk_matrix[k,i,j-1]=human_presence_matrix[i, j-1] * robot_presence_matrix[i, j-1]
+                    risk_matrix[k,i+1,j-1]=human_presence_matrix[i+1,j-1] * robot_presence_matrix[i+1,j-1]
+                    print("case 6" , risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i+1, j] +risk_matrix[k, i-1, j-1] +risk_matrix[k, i,j-1] +risk_matrix[k, i+1,j-1])
+                    probability_risk[k] = risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i+1, j] +risk_matrix[k, i-1, j-1] +risk_matrix[k, i,j-1] +risk_matrix[k, i+1,j-1]
+
+                elif(i==0 and (j!=0 and j!=39)):
+                    count_c7 = count_c7 +1
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i+1,j]=human_presence_matrix[i+1, j] * robot_presence_matrix[i+1, j]
+                    risk_matrix[k,i,j+1]=human_presence_matrix[i, j+1] * robot_presence_matrix[i, j+1]
+                    risk_matrix[k,i+1, j+1]=human_presence_matrix[i+1, j+1] * robot_presence_matrix[i+1, j+1]
+                    risk_matrix[k,i,j-1]=human_presence_matrix[i, j-1] * robot_presence_matrix[i, j-1]
+                    risk_matrix[k,i+1,j-1]=human_presence_matrix[i+1,j-1] * robot_presence_matrix[i+1,j-1]
+                    print("case 7", risk_matrix[k, i, j]+ risk_matrix[k, i+1, j]+risk_matrix[k, i, j+1] +risk_matrix[k, i+1, j+1] +risk_matrix[k, i,j-1] +risk_matrix[k, i+1,j-1])
+                    probability_risk[k] = risk_matrix[k, i, j]+ risk_matrix[k, i+1, j]+risk_matrix[k, i, j+1] +risk_matrix[k, i+1, j+1] +risk_matrix[k, i,j-1] +risk_matrix[k, i+1,j-1]
+                    
+                elif (i==39 and (j !=0 and j !=39)) :
+                    count_c8 = count_c8 +1
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i-1,j]=human_presence_matrix[i-1, j] * robot_presence_matrix[i-1, j]
+                    risk_matrix[k,i-1,j+1] = human_presence_matrix[i-1,j+1] * robot_presence_matrix[i-1, j+1]
+                    risk_matrix[k,i,j+1]=human_presence_matrix[i, j+1] * robot_presence_matrix[i, j+1]
+                    risk_matrix[k,i-1,j-1]=human_presence_matrix[i-1][j-1] * robot_presence_matrix[i-1][j-1]
+                    risk_matrix[k,i,j-1]=human_presence_matrix[i, j-1] * robot_presence_matrix[i, j-1]
+                    print("case 8", risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i-1, j+1] + risk_matrix[k, i, j+1] +risk_matrix[k, i-1,j-1] +risk_matrix[k, i,j-1])
+                    probability_risk[k] = risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i-1, j+1] + risk_matrix[k, i, j+1] +risk_matrix[k, i-1,j-1] +risk_matrix[k, i,j-1]
+                    
+                else:
+                    count_c9 = count_c9 +1
+                    risk_matrix[k,i,j]=human_presence_matrix[i, j] * robot_presence_matrix[i,j]
+                    risk_matrix[k,i-1,j]=human_presence_matrix[i-1, j] * robot_presence_matrix[i-1, j]
+                    risk_matrix[k,i+1,j]=human_presence_matrix[i+1, j] * robot_presence_matrix[i+1, j]
+                    
+                    risk_matrix[k,i-1,j+1] = human_presence_matrix[i-1,j+1] * robot_presence_matrix[i-1, j+1]
+                    risk_matrix[k,i,j+1]=human_presence_matrix[i, j+1] * robot_presence_matrix[i, j+1]
+                    risk_matrix[k,i+1, j+1]=human_presence_matrix[i+1, j+1] * robot_presence_matrix[i+1, j+1]
+                
+                    risk_matrix[k,i-1,j-1]=human_presence_matrix[i-1][j-1] * robot_presence_matrix[i-1][j-1]
+                    risk_matrix[k,i,j-1]=human_presence_matrix[i, j-1] * robot_presence_matrix[i, j-1]
+                    risk_matrix[k,i+1,j-1]=human_presence_matrix[i+1,j-1] * robot_presence_matrix[i+1,j-1]
+                    print("case 9",risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i+1, j] + risk_matrix[k, i-1, j+1] +risk_matrix[k, i,j+1] +risk_matrix[k, i+1,j+1] + risk_matrix[k, i-1,j-1] + risk_matrix[k, i,j-1] + risk_matrix[k,i+1,j-1] )
+                    probability_risk[k] = risk_matrix[k, i, j]+ risk_matrix[k, i-1, j]+risk_matrix[k, i+1, j] + risk_matrix[k, i-1, j+1] +risk_matrix[k, i,j+1] +risk_matrix[k, i+1,j+1] + risk_matrix[k, i-1,j-1] + risk_matrix[k, i,j-1] + risk_matrix[k,i+1,j-1]
+
+        print ("Probabi;lity ",probability_risk[k])
+
+print ("count cas 1: ", count_c1)
+print ("count cas 2: ", count_c2)
+print ("count cas 3: ", count_c3)
+print ("count cas 4: ", count_c4)
+print ("count cas 5: ", count_c5)
+print ("count cas 6: ", count_c6)
+print ("count cas 7: ", count_c7)
+print ("count cas 8: ", count_c8)
+print ("count cas 9: ", count_c9)
+print ("Total: ", count_c1+count_c2+count_c3+count_c4+count_c5+count_c6+count_c7+count_c8+count_c9)
+print("expected : ", time_length * 40 *40)
+
+
+print("risk_vector",risk_vector)
+
+
+                
+
+print("risk_matrix", risk_matrix)
+print("Risk_Matrix_shape", risk_matrix.shape)
+print ("the end!")
+
+temp_count = 0
+for i in range(time_length):
+    for j in range(40):
+        for k in range(40):
+            if (risk_matrix[i,j,k]!=0):
+                print (i, j, k , risk_matrix[i,j,k])
+                print("\n")
+                temp_count = temp_count +1
+
+print (temp_count,(time_length*40*40))
+print ("probability risk")
+
+
+for i in range (len(probability_risk)):
+    probability_risk[i]=np.sum(risk_matrix[i])
+    print(probability_risk[i])
+
+
+for k in range (time_length):
+    print ("k= ", k )
+    print("\n")
+    for i in range (40):
+        print(risk_matrix[k,i])
+print ("#### Debug ####")
+
+print("risk_matrix[0]", risk_matrix[0])
+
+print("Probability Risk",len(probability_risk),probability_risk)
+print("distance_vector",len(distance_vector), distance_vector)
+print("risk_vector",len(risk_vector) ,risk_vector)
+
+
+
+## Debugging 
+
+# human presence matrix 
+
+for i in range(40):
+    for j in range(40):
+        print("i=",i, "j=", j, human_presence_matrix[i][j], robot_presence_matrix[i][j])    
+
+
+
+## probability _new _risk 
+
+
+print (np.shape(risk_matrix))
+print (np.shape(risk_matrix[1]))
+print (np.shape(risk_matrix[1][2]))
+print (np.shape(risk_matrix[1][2][3]))
+
+
+risk_sum = [0] * time_length
+for i in range(time_length):
+    risk_sum[i] = np.sum(risk_matrix[i])
+
+
+print ("risk_matrix", risk_sum)
+
+### Calculating the risk 
+
+
+print ("human_path_test" , human_path_test)
+print ("robot_path_test", robot_path_test)
+
+
+
+
+
+collision_matrix = np.zeros((time_length, 40, 40))
+
+for k in range (time_length):
+    if (risk_vector[k]):
+        try: 
+            collision_matrix[k,round(human_path_test[k][0], None), round(human_path_test[k][1], None)] = 1
+        except IndexError as e:
+            print (e)
+            print ("Run Again!")
+
+
+print ("collision Matrix" , collision_matrix) 
+
+for i in range (time_length):
+    print("i=", i , np.sum(collision_matrix[i]))
+
+print("end")
+
+collision_probability  = np.zeros((time_length, 40, 40))
+
+collision_probability = np.multiply(collision_matrix, risk_matrix)
+
+for k in range(time_length):
+    for i in range (40):
+        for j in range(40):
+            if(collision_matrix[k,i,j] == 1):
+                print(k,i,j,"|", "c=",collision_probability[k,i,j], "a=", collision_matrix[k,i,j], "b=", risk_matrix[k,i,j] )
+
+
+risk_prob_time = [0] * time_length
+print("collision Probability!")
+for k in range (time_length):
+    risk_prob_time[k] = np.sum(collision_probability[k])
+    print("k:",k,risk_prob_time[k])
+
+
+## plotting 
+
+risk_x_axis = [0] * time_length
+
+for i in range(len(risk_x_axis)):
+    risk_x_axis[i] = i
+
+risk_y_axis = [0] * time_length 
+
+for i in range (len(risk_y_axis)):
+    risk_y_axis[i] = risk_prob_time[i]
+plot_risk = plt.figure()
+plt.plot(risk_x_axis, risk_y_axis, color='green', linestyle='dashed', linewidth = 3, marker='o', markerfacecolor='blue', markersize=12)
+plt.xlabel('Time instants')
+plt.ylabel('Probability of collision')
+plt.title('Probability of Collision Vs Time')
+
+plt.show()

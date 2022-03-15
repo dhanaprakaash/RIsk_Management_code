@@ -16,7 +16,7 @@ def generate_transistion_matrix ():
 
     for i in range (len(markov_transistion_matrix[0])):
         markov_transistion_matrix[i]=markov_transistion_matrix[i]/temp_sum[i]
-    print("Markov_Transistion_Chain",markov_transistion_matrix)
+    #print("Markov_Transistion_Chain",markov_transistion_matrix)
 
     '''for i in range(len(markov_transistion_matrix[0])):
         print(i, np.sum(markov_transistion_matrix[i])) '''
@@ -49,5 +49,3 @@ if __name__=="__main__":
     for i in range(9):
         print(i,np.sum(new[i]))
     print(new_matrix_2, np.sum(new_matrix_2))
-
-    

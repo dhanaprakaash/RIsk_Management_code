@@ -58,6 +58,9 @@ def robot_path_planning (source_loc, destination_loc):
     temp_Y[len(temp_Y)-1]=destination_loc[1]
     #print("Debug : Temp_Y: ", temp_Y) 
 
+    temp_X.sort()
+    temp_Y.sort()
+
     Waypoint_Array = Combining_the_X_and_Y_cordinate(temp_X,temp_Y)
     print("Debug: Waypoint Array:\n", Waypoint_Array)
     print("******Function Exits*******\n\n")
